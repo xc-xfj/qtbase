@@ -2727,6 +2727,7 @@ void QAbstractItemView::updateEditorGeometries()
     QEditorIndexHash::iterator it = d->editorIndexHash.begin();
     QWidgetList editorsToRelease;
     QWidgetList editorsToHide;
+    QWidgetList editorsToShow; 
     while (it != d->editorIndexHash.end()) {
         QModelIndex index = it.value();
         QWidget *editor = it.key();
@@ -2734,6 +2735,7 @@ void QAbstractItemView::updateEditorGeometries()
             option.rect = visualRect(index);
             if (option.rect.isValid()) {
                 editor->show();
+                editorsToShow << editor;
                 QAbstractItemDelegate *delegate = d->delegateForIndex(index);
                 if (delegate)
                     delegate->updateEditorGeometry(editor, option, index);
@@ -2750,11 +2752,28 @@ void QAbstractItemView::updateEditorGeometries()
 
     //we hide and release the editor outside of the loop because it might change the focus and try
     //to change the editors hashes.
+    
+    int reduceHeight = 0;
+    int showHeight = 0;
     for (int i = 0; i < editorsToHide.count(); ++i) {
         editorsToHide.at(i)->hide();
+        reduceHeight += editorsToHide.at(i)->height();  
     }
     for (int i = 0; i < editorsToRelease.count(); ++i) {
         d->releaseEditor(editorsToRelease.at(i));
+    }
+    //Get the total height of the elements to be displayed
+    for (int i = 0; i < editorsToShow.count(); ++i) {
+        showHeight += editorsToShow.at(i)->height();
+    }
+
+    //The list height needs to be refreshed when 
+    //the total height of the elements to be displayed is
+    //lower than the height of the view
+    QRect rect = this->rect();
+    if (rect.height() - reduceHeight > showHeight) {
+        rect.adjust(0, 0, 0, -reduceHeight);
+        setGeometry(rect);
     }
 }
 
