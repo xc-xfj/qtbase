@@ -1579,6 +1579,20 @@ void QListView::updateGeometries()
         }
     }
 
+    //When the total height of the elements to be displayed is less than the view height,
+    //the view needs to be updated
+    int toatalHight = 0;
+    for (int i = 0; i < d->model->rowCount(); i++) {
+        QModelIndex index = d->model->index(i,0);
+        QRect rect = visualRect(index);
+        toatalHight += rect.height();
+    }
+    if (d->model->rowCount() > 1)
+        toatalHight += contentsMargins().top() + contentsMargins().bottom() + spacing() * 2;
+    else
+        toatalHight += contentsMargins().top() + contentsMargins().bottom();
+    if (rect().height() > toatalHight)
+       setGeometry(rect().adjusted(0, 0, 0, toatalHight - rect().height()));
 }
 
 /*!
